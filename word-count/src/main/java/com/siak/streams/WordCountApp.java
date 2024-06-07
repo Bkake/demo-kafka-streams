@@ -19,6 +19,7 @@ import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_C
 import static org.apache.kafka.streams.StreamsConfig.STATE_DIR_CONFIG;
 
 public class WordCountApp {
+
     public static void main(String[] args) {
         final Properties props = new Properties();
         props.put(APPLICATION_ID_CONFIG, "word-count-app-v2");
@@ -27,11 +28,18 @@ public class WordCountApp {
         props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(STATE_DIR_CONFIG, String.format("%s%s", "word-count-app", UUID.randomUUID()));
 
+        WordCountApp wordCountApp = new WordCountApp();
 
+        try (KafkaStreams streams = new KafkaStreams(wordCountApp.createTopology(), props)){
+            streams.start();
+            // shutdown hook to correctly close the streams application
+            Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
+        }
+    }
+
+    public Topology createTopology() {
         StreamsBuilder builder = new StreamsBuilder();
-
         KStream<String, String> wordCountInput = builder.stream("word-count-input");
-
         KTable<String, String> wordCounts = wordCountInput
                 .mapValues(value -> value.toLowerCase())
                 .flatMapValues(value -> Arrays.asList(value.split("\\W+")))
@@ -41,14 +49,6 @@ public class WordCountApp {
 
         wordCounts.toStream().to("word-count-output",
                 Produced.with(Serdes.String(), Serdes.String()));
-
-        Topology topology = builder.build();
-
-        try (KafkaStreams streams = new KafkaStreams(topology, props)){
-            streams.start();
-            // shutdown hook to correctly close the streams application
-            Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
-        }
-
+        return builder.build();
     }
 }
