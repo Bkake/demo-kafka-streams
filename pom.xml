@@ -6,12 +6,11 @@
   <artifactId>demo-kafka-streams</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
+
   <modules>
     <module>word-count</module>
     <module>favourite-color</module>
+    <module>bank-balance</module>
   </modules>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
 </project>
